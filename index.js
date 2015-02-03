@@ -91,6 +91,31 @@ OAuthServer.prototype.grant = function () {
 };
 
 /**
+ * Scope Middleware
+ *
+ * Returns middleware that will validate the oauth scope.
+ *
+ * @return {Function} middleware
+ */
+OAuthServer.prototype.scope = function (requiredScope) {
+  var self = this;
+  var expressScope = thenify(this.server.scope(requiredScope));
+
+  return function *scope(next) {
+    try {
+      yield expressScope(this.request, this.response);
+    } catch (err) {
+      if (self.server.passthroughErrors)
+        throw err;
+
+      return handleError(err, self.server, this);
+    }
+
+    yield *next;
+  };
+};
+
+/**
  * OAuth Error handler
  *
  * @return {Function} middleware
